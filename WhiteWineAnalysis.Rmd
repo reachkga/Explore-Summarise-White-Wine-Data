@@ -17,6 +17,10 @@ library(psych)
 library(ggplot2)
 library(gridExtra)
 library(memisc)
+#install.packages('corrplot')
+library(corrplot)
+#install.packages('arm')
+library(arm)
 
 head(ww)
 
@@ -344,7 +348,15 @@ In addition, the residual sugar of the white wine presented a long tail distribu
 
 # Bivariate Plots Section
 
-I am going to start with a clean pair.panels plot to examine some key relationships, plots and correlation between variables.
+I am going to start with a clean correlation and pair.panels plot to examine some key relationships between variables.
+
+
+```{r Correlation Matrix}
+
+ggcorr(ww, palette = "RdBu", labels = TRUE)
+```
+
+We can see that density and residual sugar has very strong correlation. I am not able to ajust the labelling of this plot. 
 
 ```{r Psych Scatter Matrix}
 
@@ -355,6 +367,7 @@ pairs.panels(ww,
              ellipses = TRUE # show correlation ellipses
              )
 
+ggcorr(ww, palette = "RdBu", labels = TRUE)
 ```
 
 Now I am going to plot scatter plots to analyse relationship between our feature of focus(quality) and chemical properties. I will also be jittering these plots to give a better perspective. 
@@ -792,6 +805,14 @@ ggplot(ww,aes(quality.cat, alcohol)) +
 
 ```
 
+```{r Density vs Alcohol by Quality}
+ggplot(aes(x = density, y = alcohol, color = as.factor(quality)), data = ww) +
+  geom_point() + 
+  scale_color_brewer(type = 'seq') +
+  xlim(quantile(ww$density, 0.01),
+       quantile(ww$density, 0.99))
+```
+
 I am going to try to construct a linear model to predict th quality score based on the chemical properties. 
 
 ```{r Linear Model}
@@ -837,7 +858,19 @@ To improve the model we might need to introduce new features into the model or n
 
 ## Final Plot 1
 
-```{r Final plot 1}
+```{r Final Plot 1)}
+qplot(x = citric.acid, data = ww, binwidth = .01) + 
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
+  ylab("Count") +
+  xlab("Citric acid content (g / dm^3)")
+```
+
+
+This distribution is also normal with citric acid value peaking around 0.3. However, the most interesting part about this plot is the surprising peak at .49. According to waterhouse one would expect to see 0 to 500mg/L (0.5 g/dm^3) citric acid. This might be why the value peaks at around 0.49-0.5. In most country this is the legal limit of citric acid content.
+
+## Final Plot 2
+
+```{r Final plot 2}
 saq <- ggplot(aes(x = alcohol, y = quality), data = ww) +
   geom_jitter(alpha = 1/10) +
   xlab("Alcohol level (% by volume)") +
@@ -857,9 +890,9 @@ grid.arrange(saq,bqa)
 
 The strongest correlation observed between the feature of interest and any other feature was with alcohol at 0.436. This relationship can be visualised using the above chart. We can see that the concentration of points is increasing from left to right. That means as alcohol level increases quality also increases. Taking a closer look at th box plot we realise that the increasing trend is not steady. Between quality 3 and 5 it is a negative relationship. It is also safe to assume that after 12.5% alcohol content the quality of wine will decrease because the alcohol taste will overpower the native wine taste.
 
-## Final Plot 2
+## Final Plot 3
 
-```{r Final Plot 2}
+```{r Final Plot 3}
 ggplot(aes(x = density, y = alcohol, color = as.factor(quality)), data = ww) +
   geom_point() + 
   scale_color_brewer(type = 'seq') +
